@@ -1,7 +1,8 @@
 #include "HashTable.cpp"
+#include <iostream>
 
 int main() {
-    int initialSize = 7; 
+    int initialSize = 5; 
     HashTable ht(initialSize);
 
     // Example test case
@@ -17,7 +18,8 @@ int main() {
     ht.printTable();
     ht.insert(29);  
     ht.printTable(); 
-
+    ht.insert(22);  
+    ht.printTable();
     int find = ht.search(22);
     std::cout << "Found at:" << find << std::endl;
 
