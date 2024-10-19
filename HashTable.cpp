@@ -8,10 +8,9 @@ using namespace std;
 
 class HashTable {
 private:
-    vector<int> table;
+    vector<int*> table;
     int size;
     int count;
-    enum { EMPTY = -1, DELETED = -2 };
     float alpha = 0.8; // Load Factor
 
     int expmod(int base, int exp, int mod) {
@@ -67,14 +66,15 @@ private:
 
     void resize() {
         int newSize = getNextPrime(size * 2);
-        vector<int> oldTable = table;
-        table = vector<int>(newSize, EMPTY);
+        vector<int*> oldTable = table;
+        table = vector<int*>(newSize, nullptr);
         size = newSize;
         count = 0;
 
-        for (int item : oldTable) {
-            if (item != EMPTY && item != DELETED) {
-                insert(item);
+        for (int* item : oldTable) {
+            if (item != nullptr) {
+                insert(*item);
+                delete item;
             }
         }
     }
@@ -82,7 +82,7 @@ private:
 public:
     HashTable(int initialSize) {
         size = getNextPrime(initialSize);
-        table = vector<int>(size, EMPTY);
+        table = vector<int*>(size, nullptr);
         count = 0;
     }
 
@@ -93,25 +93,16 @@ public:
 
         int index = hash(key);
         int i = 0;
-        int firstDeletedIndex = -1;
 
         while (i < size) {
             int probeIndex = (index + i * i) % size;
-            if (table[probeIndex] == key) {
-                cout << "Duplicate key insertion is not allowed" << endl;
-                return;
-            } else if (table[probeIndex] == EMPTY) {
-                if (firstDeletedIndex != -1) {
-                    table[firstDeletedIndex] = key;
-                } else {
-                    table[probeIndex] = key;
-                }
+            if (table[probeIndex] == nullptr) {
+                table[probeIndex] = new int(key);
                 count++;
                 return;
-            } else if (table[probeIndex] == DELETED) {
-                if (firstDeletedIndex == -1) {
-                    firstDeletedIndex = probeIndex;
-                }
+            } else if (*table[probeIndex] == key) {
+                cout << "Duplicate key insertion is not allowed" << endl;
+                return;
             }
             i++;
         }
@@ -122,7 +113,8 @@ public:
     void remove(int key) {
         int index = search(key);
         if (index != -1) {
-            table[index] = DELETED;
+            delete table[index];
+            table[index] = nullptr;
             count--;
         } else {
             cout << "Element not found" << endl;
@@ -135,13 +127,12 @@ public:
 
         while (i < size) {
             int probeIndex = (index + i * i) % size;
-            if (table[probeIndex] == key) {
-                return probeIndex;
-            }
-            if (table[probeIndex] == EMPTY) {
+            if (table[probeIndex] == nullptr) {
                 return -1;
             }
-            // Continue probing if DELETED or occupied with a different key
+            if (*table[probeIndex] == key) {
+                return probeIndex;
+            }
             i++;
         }
 
@@ -150,12 +141,19 @@ public:
 
     void printTable() {
         for (int i = 0; i < size; i++) {
-            if (table[i] == EMPTY || table[i] == DELETED) {
+            if (table[i] == nullptr) {
                 cout << "- ";
             } else {
-                cout << table[i] << " ";
+                cout << *table[i] << " ";
             }
         }
         cout << endl;
+    }
+
+    // Add destructor to free allocated memory
+    ~HashTable() {
+        for (int* item : table) {
+            delete item;
+        }
     }
 };
